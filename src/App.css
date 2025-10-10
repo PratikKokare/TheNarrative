@@ -1174,18 +1174,59 @@ a:hover {
 }
 
 
-/* 🎨 RESTORE ORIGINAL BLUE-TO-PURPLE GRADIENT */
+/* 🎨 FIXED: SUBTLE GRADIENT + VISIBLE LOGO */
+
 :root {
-  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%) !important;
-  --gradient-primary-hover: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%) !important;
-  --gradient-border: linear-gradient(90deg, transparent 0%, #3b82f6 20%, #6366f1 50%, #8b5cf6 80%, transparent 100%) !important;
-  --gradient-logo: linear-gradient(45deg, #3b82f6 0%, #6366f1 30%, #8b5cf6 60%, #a855f7 90%, #3b82f6 100%) !important;
+  /* 🌈 SUBTLE, ELEGANT GRADIENT (not too bright) */
+  --gradient-primary: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 30%, #a5b4fc 70%, #818cf8 100%) !important;
+  --gradient-primary-hover: linear-gradient(135deg, #c7d2fe 0%, #a5b4fc 30%, #818cf8 70%, #6366f1 100%) !important;
+  --gradient-border: linear-gradient(90deg, transparent 0%, #c7d2fe 20%, #a5b4fc 50%, #818cf8 80%, transparent 100%) !important;
 }
 
+/* Dark mode - even more subtle */
 [data-theme="dark"] {
-  --gradient-primary: linear-gradient(135deg, #60a5fa 0%, #818cf8 50%, #a78bfa 100%) !important;
-  --gradient-primary-hover: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #c084fc 100%) !important;
-  --gradient-border: linear-gradient(90deg, transparent 0%, #60a5fa 20%, #818cf8 50%, #a78bfa 80%, transparent 100%) !important;
-  --gradient-logo: linear-gradient(45deg, #60a5fa 0%, #818cf8 30%, #a78bfa 60%, #c084fc 90%, #60a5fa 100%) !important;
+  --gradient-primary: linear-gradient(135deg, #312e81 0%, #4338ca 30%, #4f46e5 70%, #6366f1 100%) !important;
+  --gradient-primary-hover: linear-gradient(135deg, #4338ca 0%, #4f46e5 30%, #6366f1 70%, #818cf8 100%) !important;
+  --gradient-border: linear-gradient(90deg, transparent 0%, #312e81 20%, #4f46e5 50%, #6366f1 80%, transparent 100%) !important;
+}
+
+/* 📰 LOGO FIX - Make it visible with proper emoji display */
+.header-logo {
+  /* Remove gradient text effect from logo to show emoji properly */
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: unset !important;
+  color: #6366f1 !important; /* Nice blue-purple color for emoji */
+  text-shadow: 0 0 20px rgba(99, 102, 241, 0.3) !important; /* Subtle glow */
+  animation: none !important; /* Remove animation from emoji */
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Dark mode logo */
+[data-theme="dark"] .header-logo {
+  color: #a5b4fc !important;
+  text-shadow: 0 0 20px rgba(165, 180, 252, 0.4) !important;
+}
+
+/* TITLE - Keep gradient but make it subtle */
+.header-title {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%) !important;
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: gradient-shift 4s ease-in-out infinite;
+}
+
+[data-theme="dark"] .header-title {
+  background: linear-gradient(135deg, #818cf8 0%, #a5b4fc 50%, #c7d2fe 100%) !important;
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
 }
 
