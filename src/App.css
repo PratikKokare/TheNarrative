@@ -3448,7 +3448,7 @@ select.form-control {
 .news-summary-card:hover {
   box-shadow: 
     var(--shadow-lg),
-    0 0 var(--space-32) rgba(var(--color-teal-300-rgb, 50, 184, 198), 0.15);
+    0 0 var(--space-15) rgba(var(--color-teal-300-rgb, 50, 184, 198), 0.15);
   border-color: var(--color-primary);
 }
 
