@@ -1,260 +1,429 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import axios from "axios";
-import NewsSummaryCard from "./NewsSummaryCard";
-import { gsap } from "gsap";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import InfiniteScroll from 'react-infinite-scroll-component';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import axios from 'axios';
+import moment from 'moment';
+import { gsap } from 'gsap';
 
-export default function NewsFeed({ onStorySelect }) {
-  const [news, setNews] = useState([]);
+import NewsSummaryCard from './NewsSummaryCard';
+import CompareCoverage from './CompareCoverage';
+import FilterSidebar from './FilterSidebar';
+
+const NewsFeed = () => {
+  const [articles, setArticles] = useState([]);
+  const [storyGroups, setStoryGroups] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [summaryProgress, setSummaryProgress] = useState({ current: 0, total: 0 });
-  const feedRef = useRef();
-  const maxRetries = 3;
+  const [selectedStory, setSelectedStory] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [view, setView] = useState('articles'); // 'articles' or 'stories'
+  
+  const [filters, setFilters] = useState({
+    category: 'all',
+    bias: 'all',
+    sortBy: 'publishedAt',
+    sortOrder: 'desc',
+    dateFrom: '',
+    dateTo: '',
+    search: '',
+    page: 1
+  });
 
-  // Memoized API endpoints
-  const NEWS_ENDPOINT = useMemo(() => "https://twosides-backend.onrender.com/api/news", []);
-  const ANALYZE_ENDPOINT = useMemo(() => "https://twosides-backend.onrender.com/api/analyze", []);
+  const [stats, setStats] = useState({
+    totalArticles: 0,
+    lastUpdate: null,
+    biasStats: {},
+    categoryStats: {}
+  });
 
-  // Function to generate summary for an article
-  const generateSummary = async (article) => {
-    try {
-      console.log(`Generating summary for: ${article.title?.substring(0, 50)}...`);
-      
-      // Use article content (description) for summary
-      const textToSummarize = article.content || article.description || article.title || "";
-      
-      if (!textToSummarize.trim()) {
-        console.log("No content to summarize for article");
-        return "No summary available - insufficient article content.";
-      }
+  const containerRef = useRef();
+  const API_URL = process.env.REACT_APP_API_URL || 'https://twosides-backend.onrender.com';
 
-      const response = await axios.post(ANALYZE_ENDPOINT, {
-        text: textToSummarize
-      }, {
-        timeout: 30000,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+  useEffect(() => {
+    loadInitialData();
+    loadStats();
+  }, []);
 
-      console.log("Summary response:", response.data);
-      return response.data.summary || "No summary available";
-
-    } catch (error) {
-      console.error("Error generating summary:", error);
-      
-      if (error.response?.status === 400) {
-        return "No summary available - insufficient content.";
-      } else if (error.response?.status === 429) {
-        return "Summary temporarily unavailable - rate limit exceeded.";
-      } else if (error.response?.status >= 500) {
-        return "Summary temporarily unavailable - server error.";
-      } else {
-        return "Summary temporarily unavailable.";
-      }
+  useEffect(() => {
+    if (filters.page === 1) {
+      loadInitialData();
     }
-  };
+  }, [filters]);
 
-  const fetchNews = useCallback(async () => {
+  const loadInitialData = async () => {
+    setLoading(true);
+    setArticles([]);
+    setStoryGroups([]);
+    
     try {
-      setLoading(true);
-      setError(null);
-      setSummaryProgress({ current: 0, total: 0 });
-      
-      console.log("Fetching news from The Narrative backend...");
-      
-      const response = await axios.get(NEWS_ENDPOINT, {
-        timeout: 60000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log("News response:", response.data);
-      
-      const articles = Array.isArray(response.data) ? response.data : [];
-      
-      if (articles.length === 0) {
-        setError("No news articles found. Please try again later.");
-        return;
+      if (view === 'articles') {
+        await loadArticles(true);
+      } else {
+        await loadStoryGroups(true);
       }
-
-      // First, set articles without summaries
-      const articlesWithoutSummaries = articles.map((article, index) => ({
-        id: article.id || `story-${index}`,
-        title: article.title || "Untitled Article",
-        summary: "Generating summary...", // Temporary placeholder
-        timestamp: article.publishedAt || article.timestamp || new Date().toISOString(),
-        sources: [{
-          name: article.source?.name || "Unknown Source",
-          url: article.url || "#",
-          bias: "center" // Default bias
-        }],
-        category: article.category || "General",
-        readingTime: Math.ceil((article.content?.length || article.description?.length || 200) / 200),
-        originalArticle: article // Keep original data for summary generation
-      }));
-
-      setNews(articlesWithoutSummaries);
-      setSummaryProgress({ current: 0, total: articles.length });
-
-      // Now generate summaries for each article
-      console.log(`Starting summary generation for ${articles.length} articles...`);
-      
-      const updatedArticles = [...articlesWithoutSummaries];
-      
-      for (let i = 0; i < articles.length; i++) {
-        try {
-          setSummaryProgress({ current: i + 1, total: articles.length });
-          
-          const summary = await generateSummary(articles[i]);
-          updatedArticles[i] = {
-            ...updatedArticles[i],
-            summary: summary
-          };
-          
-          // Update the news state with the new summary
-          setNews([...updatedArticles]);
-          
-          console.log(`Summary ${i + 1}/${articles.length} completed`);
-          
-          // Small delay to avoid overwhelming the API
-          if (i < articles.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-          
-        } catch (error) {
-          console.error(`Failed to generate summary for article ${i + 1}:`, error);
-          updatedArticles[i] = {
-            ...updatedArticles[i],
-            summary: "Summary generation failed."
-          };
-          setNews([...updatedArticles]);
-        }
-      }
-
-      console.log("All summaries generated successfully!");
-      setSummaryProgress({ current: articles.length, total: articles.length });
-      setRetryCount(0); // Reset retry count on success
-
     } catch (error) {
-      console.error("Error fetching news:", error);
-      
-      let errorMessage = "Unable to load news articles.";
-      
-      if (error.code === 'ECONNABORTED') {
-        errorMessage = "Request timed out. The server might be starting up.";
-      } else if (error.response?.status === 429) {
-        errorMessage = "Too many requests. Please wait a moment and try again.";
-      } else if (error.response?.status >= 500) {
-        errorMessage = "Server error. Please try again later.";
-      } else if (!navigator.onLine) {
-        errorMessage = "No internet connection. Please check your network.";
-      }
-      
-      setError(errorMessage);
+      console.error('Error loading initial data:', error);
     } finally {
       setLoading(false);
     }
-  }, [NEWS_ENDPOINT, ANALYZE_ENDPOINT]);
+  };
 
-  const handleRetry = useCallback(() => {
-    if (retryCount < maxRetries) {
-      setRetryCount(prev => prev + 1);
-      fetchNews();
+  const loadArticles = async (reset = false) => {
+    try {
+      const params = new URLSearchParams({
+        page: reset ? '1' : filters.page.toString(),
+        limit: '20',
+        ...(filters.category !== 'all' && { category: filters.category }),
+        ...(filters.bias !== 'all' && { bias: filters.bias }),
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        ...(filters.search && { search: filters.search }),
+        ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
+        ...(filters.dateTo && { dateTo: filters.dateTo })
+      });
+
+      const response = await axios.get(`${API_URL}/api/news?${params}`);
+      const { articles: newArticles, pagination } = response.data;
+
+      if (reset) {
+        setArticles(newArticles);
+        setFilters(prev => ({ ...prev, page: 1 }));
+      } else {
+        setArticles(prev => [...prev, ...newArticles]);
+      }
+
+      setHasMore(pagination.hasMore);
+      
+      // Animate new articles in
+      setTimeout(() => {
+        gsap.fromTo('.news-card:last-child', 
+          { opacity: 0, y: 30 }, 
+          { opacity: 1, y: 0, duration: 0.5 }
+        );
+      }, 100);
+
+    } catch (error) {
+      console.error('Error loading articles:', error);
+      setHasMore(false);
     }
-  }, [retryCount, maxRetries, fetchNews]);
+  };
 
-  useEffect(() => {
-    fetchNews();
-  }, [fetchNews]);
+  const loadStoryGroups = async (reset = false) => {
+    try {
+      const params = new URLSearchParams({
+        page: reset ? '1' : filters.page.toString(),
+        limit: '10',
+        ...(filters.category !== 'all' && { category: filters.category })
+      });
 
-  // Animate cards when news updates
-  useEffect(() => {
-    if (news.length > 0 && feedRef.current) {
-      gsap.fromTo(
-        ".news-summary-card",
-        { opacity: 0, y: 30, scale: 0.95 },
-        { 
-          opacity: 1, 
-          y: 0, 
-          scale: 1, 
-          duration: 0.6, 
-          stagger: 0.1, 
-          ease: "power2.out" 
-        }
-      );
+      const response = await axios.get(`${API_URL}/api/news/stories?${params}`);
+      const { storyGroups: newStoryGroups, pagination } = response.data;
+
+      if (reset) {
+        setStoryGroups(newStoryGroups);
+        setFilters(prev => ({ ...prev, page: 1 }));
+      } else {
+        setStoryGroups(prev => [...prev, ...newStoryGroups]);
+      }
+
+      setHasMore(pagination.hasMore);
+
+    } catch (error) {
+      console.error('Error loading story groups:', error);
+      setHasMore(false);
     }
-  }, [news]);
+  };
 
-  if (loading) {
-    return (
-      <div className="news-feed-container">
-        <div className="loading-spinner">
-          <div className="spinner-ring"></div>
-          <div className="loading-text">
-            <h3>Fetching the latest stories from multiple perspectives</h3>
-            {summaryProgress.total > 0 && (
-              <p className="summary-progress">
-                Generating summaries: {summaryProgress.current}/{summaryProgress.total}
-              </p>
+  const loadStats = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/news/stats`);
+      setStats(response.data);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  const loadMore = () => {
+    setFilters(prev => ({ ...prev, page: prev.page + 1 }));
+    
+    if (view === 'articles') {
+      loadArticles();
+    } else {
+      loadStoryGroups();
+    }
+  };
+
+  const handleStoryClick = async (storyId) => {
+    try {
+      const response = await axios.get(`${API_URL}/api/news/stories/${storyId}`);
+      setSelectedStory(response.data);
+    } catch (error) {
+      console.error('Error loading story details:', error);
+    }
+  };
+
+  const handleFiltersChange = useCallback((newFilters) => {
+    setFilters(newFilters);
+  }, []);
+
+  const getBiasColor = (bias) => {
+    switch(bias) {
+      case 'left': return '#4285f4';
+      case 'center': return '#9c27b0';  
+      case 'right': return '#f44336';
+      default: return '#9e9e9e';
+    }
+  };
+
+  const getBiasLabel = (bias) => {
+    switch(bias) {
+      case 'left': return 'Left Leaning';
+      case 'center': return 'Center';
+      case 'right': return 'Right Leaning';
+      default: return 'Unknown';
+    }
+  };
+
+  const formatTimeAgo = (date) => {
+    return moment(date).fromNow();
+  };
+
+  const renderArticleCard = (article) => (
+    <div key={article._id} className="news-card" data-bias={article.articleBias}>
+      <div className="news-card-content">
+        {article.imageUrl && (
+          <div className="news-image">
+            <img src={article.imageUrl} alt={article.title} loading="lazy" />
+          </div>
+        )}
+        
+        <div className="news-text">
+          <div className="news-meta">
+            <span className="news-source">{article.source.name}</span>
+            <span className="news-date">{formatTimeAgo(article.publishedAt)}</span>
+            <div className="news-badges">
+              <span className="category-badge">{article.category}</span>
+              <span 
+                className="bias-badge"
+                style={{ backgroundColor: getBiasColor(article.articleBias) }}
+              >
+                {getBiasLabel(article.articleBias)}
+              </span>
+              {article.biasConfidence > 0.7 && (
+                <span className="confidence-badge">High Confidence</span>
+              )}
+            </div>
+          </div>
+          
+          <h3 className="news-title">
+            {article.aiHeading || article.title}
+          </h3>
+          
+          <p className="news-summary">
+            {article.summary || article.description}
+          </p>
+          
+          {article.keywords && article.keywords.length > 0 && (
+            <div className="news-keywords">
+              {article.keywords.slice(0, 3).map((keyword, index) => (
+                <span key={index} className="keyword-tag">
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          )}
+          
+          <div className="news-actions">
+            <a 
+              href={article.url} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="read-more-btn"
+            >
+              Read Full Article
+            </a>
+            {article.biasReasoning && (
+              <button 
+                className="bias-info-btn"
+                title={article.biasReasoning}
+              >
+                ℹ️ Bias Info
+              </button>
             )}
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="news-feed-error">
-        <div className="error-content">
-          <h3>Unable to Load News</h3>
-          <p>{error}</p>
-          {retryCount < maxRetries && (
-            <button 
-              onClick={handleRetry}
-              className="retry-button"
-            >
-              Try Again ({maxRetries - retryCount} attempts remaining)
-            </button>
-          )}
-          <p className="error-help">
-            If this issue persists, please check if the backend service is running.
-          </p>
+  const renderStoryGroupCard = (storyGroup) => (
+    <div key={storyGroup._id} className="story-group-card">
+      <div className="story-group-header">
+        <h3 className="story-group-title">{storyGroup.mainHeadline}</h3>
+        <p className="story-group-summary">{storyGroup.summary}</p>
+        
+        <div className="story-group-meta">
+          <span className="story-category">{storyGroup.category}</span>
+          <span className="story-date">{formatTimeAgo(storyGroup.createdAt)}</span>
         </div>
       </div>
+      
+      <div className="story-bias-distribution">
+        <div className="bias-breakdown">
+          <span>Coverage by political leaning:</span>
+          <div className="bias-counts">
+            <div className="bias-count left">
+              <span className="bias-dot" style={{ backgroundColor: getBiasColor('left') }}></span>
+              Left: {storyGroup.biasDistribution.left}
+            </div>
+            <div className="bias-count center">
+              <span className="bias-dot" style={{ backgroundColor: getBiasColor('center') }}></span>
+              Center: {storyGroup.biasDistribution.center}
+            </div>
+            <div className="bias-count right">
+              <span className="bias-dot" style={{ backgroundColor: getBiasColor('right') }}></span>
+              Right: {storyGroup.biasDistribution.right}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <button 
+        className="compare-coverage-btn"
+        onClick={() => handleStoryClick(storyGroup._id)}
+      >
+        📊 Compare Coverage ({storyGroup.articles.length} sources)
+      </button>
+    </div>
+  );
+
+  const renderLoadingSkeleton = () => (
+    <div className="loading-skeleton">
+      {[...Array(5)].map((_, index) => (
+        <div key={index} className="skeleton-card">
+          <Skeleton height={200} />
+          <div className="skeleton-content">
+            <Skeleton count={3} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  if (selectedStory) {
+    return (
+      <CompareCoverage 
+        story={selectedStory} 
+        onClose={() => setSelectedStory(null)} 
+      />
     );
   }
 
   return (
-    <div className="news-feed-container" ref={feedRef}>
-      <div className="news-feed-header">
-        <h2>{news.length} perspectives available</h2>
-        {summaryProgress.current < summaryProgress.total && (
-          <p className="summary-status">
-            Generating summaries: {summaryProgress.current}/{summaryProgress.total}
-          </p>
-        )}
-      </div>
+    <div className="news-feed-container">
+      {/* Filter Sidebar */}
+      <FilterSidebar
+        filters={filters}
+        onFiltersChange={handleFiltersChange}
+        isOpen={showFilters}
+        onToggle={() => setShowFilters(!showFilters)}
+      />
 
-      {news.length > 0 ? (
-        <div className="news-grid">
-          {news.map((story) => (
-            <NewsSummaryCard 
-              key={story.id} 
-              story={story} 
-              onClick={() => onStorySelect && onStorySelect(story)}
-            />
-          ))}
+      {/* Main Content */}
+      <div className="news-feed-main">
+        {/* Header */}
+        <div className="news-feed-header">
+          <div className="header-top">
+            <h1>📰 The Narrative</h1>
+            <button 
+              className="filter-toggle-btn"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              🔍 Filters
+            </button>
+          </div>
+          
+          {/* Stats Bar */}
+          <div className="stats-bar">
+            <div className="stat-item">
+              <span className="stat-number">{stats.totalArticles.toLocaleString()}</span>
+              <span className="stat-label">Total Articles</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">
+                {stats.lastUpdate ? formatTimeAgo(stats.lastUpdate) : 'N/A'}
+              </span>
+              <span className="stat-label">Last Updated</span>
+            </div>
+            <div className="bias-stats">
+              {Object.entries(stats.biasStats).map(([bias, count]) => (
+                <div key={bias} className="bias-stat">
+                  <span 
+                    className="bias-dot"
+                    style={{ backgroundColor: getBiasColor(bias) }}
+                  ></span>
+                  <span>{bias}: {count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* View Toggle */}
+          <div className="view-toggle">
+            <button 
+              className={`view-btn ${view === 'articles' ? 'active' : ''}`}
+              onClick={() => setView('articles')}
+            >
+              📄 Individual Articles
+            </button>
+            <button 
+              className={`view-btn ${view === 'stories' ? 'active' : ''}`}
+              onClick={() => setView('stories')}
+            >
+              📰 Story Groups
+            </button>
+          </div>
         </div>
-      ) : (
-        <div className="no-news">
-          <p>No stories available at the moment.</p>
+
+        {/* Content */}
+        <div className="news-content" ref={containerRef}>
+          {loading ? (
+            renderLoadingSkeleton()
+          ) : (
+            <InfiniteScroll
+              dataLength={view === 'articles' ? articles.length : storyGroups.length}
+              next={loadMore}
+              hasMore={hasMore}
+              loader={<div className="loading-more">Loading more...</div>}
+              endMessage={
+                <div className="end-message">
+                  <p>🎉 You've reached the end of the feed!</p>
+                  <p>Check back later for more articles.</p>
+                </div>
+              }
+              refreshFunction={loadInitialData}
+              pullDownToRefresh
+              pullDownToRefreshContent={
+                <h3 style={{ textAlign: 'center' }}>⬇️ Pull down to refresh</h3>
+              }
+              releaseToRefreshContent={
+                <h3 style={{ textAlign: 'center' }}>⬆️ Release to refresh</h3>
+              }
+            >
+              <div className="news-grid">
+                {view === 'articles' ? (
+                  articles.map(renderArticleCard)
+                ) : (
+                  storyGroups.map(renderStoryGroupCard)
+                )}
+              </div>
+            </InfiniteScroll>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
-}
+};
+
+export default NewsFeed;
