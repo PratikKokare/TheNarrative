@@ -57,8 +57,8 @@ function App() {
       <div className="app" ref={appRef}>
         <header className="app-header">
           <div className="header-brand">
-            <div className="header-logo">TwoSides</div>
-            <div className="header-tagline">Multiple perspectives, one story</div>
+            <div className="header-logo">The Narrative</div>
+            <div className="header-tagline">One Story, Every Perspective</div>
           </div>
           <ThemeToggle />
         </header>
@@ -137,5 +137,6 @@ export default App;
 
 
 // Vercel redeploy trigger: Thu Oct 9, 9:00PM
+
 
 
