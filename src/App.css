@@ -1780,3 +1780,26 @@ textarea:focus-visible {
 *::-webkit-scrollbar-track {
   background: transparent;
 }
+
+[data-theme="light"] {
+  --color-background: #f4f6f8;
+  --color-surface: #fff;
+  --color-text: #192c3e;
+  --color-text-secondary: #637381;
+  /* Add or override any other tokens for light theme here */
+}
+
+[data-theme="dark"] {
+  --color-background: #101a24;
+  --color-surface: #192c3e;
+  --color-text: #fff;
+  --color-text-secondary: #bbbbbb;
+  /* Add or override any other tokens for dark theme here */
+}
+
+/* Use the variables in your selectors throughout the stylesheet */
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
