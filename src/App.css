@@ -1790,14 +1790,13 @@ textarea:focus-visible {
 }
 
 [data-theme="dark"] {
-  --color-background: #101a24;
-  --color-surface: #192c3e;
-  --color-text: #fff;
-  --color-text-secondary: #bbbbbb;
-  /* Add or override any other tokens for dark theme here */
+  --color-background: #000;               /* change to pure black */
+  --color-surface: #131313;               /* very dark gray */
+  --color-text: #fff;                     /* white text for high contrast */
+  --color-text-secondary: #bbbbbb;        /* secondary text less bright */
+  --color-primary: #bb86fc;               /* optional: purple accent */
+  /* You can update or override other variables for a more neutral palette */
 }
-
-/* Use the variables in your selectors throughout the stylesheet */
 body {
   background: var(--color-background);
   color: var(--color-text);
