@@ -7,7 +7,6 @@ export function ThemeProvider({ children }) {
     // Check localStorage first, then system preference
     const saved = localStorage.getItem('twosides-theme');
     if (saved) return saved;
-    
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
@@ -21,10 +20,7 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('twosides-theme', theme);
-    
-    // Add smooth transition for theme changes
     document.documentElement.style.transition = 'background-color 0.3s ease, color 0.3s ease';
-    
     return () => {
       document.documentElement.style.transition = '';
     };
@@ -38,13 +34,12 @@ export function ThemeProvider({ children }) {
         setTheme(e.matches ? 'dark' : 'light');
       }
     };
-
     mediaQuery.addListener(handleChange);
     return () => mediaQuery.removeListener(handleChange);
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
