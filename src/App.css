@@ -14,9 +14,9 @@
   --color-slate-900: rgba(19, 52, 59, 1);
   --color-teal-300: rgba(50, 184, 198, 1);
   --color-teal-400: rgba(45, 166, 178, 1);
-  --color-teal-500: rgba(33, 128, 141, 1);
-  --color-teal-600: rgba(29, 116, 128, 1);
-  --color-teal-700: rgba(26, 104, 115, 1);
+  --color-teal-500: rgba(50, 184, 198, 1);
+  --color-teal-600: rgba(45, 166, 178, 1);
+  --color-teal-700: rgba(40, 150, 165, 1);
   --color-teal-800: rgba(41, 150, 161, 1);
   --color-red-400: rgba(255, 84, 89, 1);
   --color-red-500: rgba(192, 21, 47, 1);
@@ -25,7 +25,7 @@
 
   /* RGB versions for opacity control */
   --color-brown-600-rgb: 94, 82, 64;
-  --color-teal-500-rgb: 33, 128, 141;
+  --color-teal-500-rgb: 50, 184, 198;
   --color-slate-900-rgb: 19, 52, 59;
   --color-slate-500-rgb: 98, 108, 113;
   --color-red-500-rgb: 192, 21, 47;
@@ -266,7 +266,7 @@
 [data-color-scheme="light"] {
   /* RGB versions for opacity control (light mode) */
   --color-brown-600-rgb: 94, 82, 64;
-  --color-teal-500-rgb: 33, 128, 141;
+  --color-teal-500-rgb: 50, 184, 198;
   --color-slate-900-rgb: 19, 52, 59;
 
   /* Semantic Color Tokens (Light Mode) */
