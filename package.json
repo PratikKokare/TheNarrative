@@ -9,7 +9,11 @@
     "gsap": "^3.12.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "react-infinite-scroll-component": "^6.1.0",
+    "react-select": "^5.8.0",
+    "moment": "^2.29.4",
+    "react-loading-skeleton": "^3.3.1"
   },
   "scripts": {
     "start": "react-scripts start",
