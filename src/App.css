@@ -1802,3 +1802,543 @@ body {
   color: var(--color-text);
 }
 
+
+
+/* Add these styles to your App.css file */
+
+/* Loading Spinner Styles */
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-24);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-secondary);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Enhanced Loading States */
+.loading {
+  text-align: center;
+  padding: var(--space-32);
+}
+
+.loading h3 {
+  color: var(--color-text);
+  margin: var(--space-16) 0 var(--space-8) 0;
+  font-weight: var(--font-weight-semibold);
+}
+
+.loading p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Enhanced Error Styles */
+.error {
+  text-align: center;
+  padding: var(--space-32);
+  background: rgba(var(--color-error-rgb), 0.05);
+  border: 1px solid rgba(var(--color-error-rgb), 0.2);
+  border-radius: var(--radius-lg);
+  margin: var(--space-16);
+}
+
+.retry-button, .refresh-button {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  color: var(--color-btn-primary-text);
+  border: none;
+  padding: var(--space-12) var(--space-24);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--duration-normal) var(--ease-standard);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: var(--space-16);
+}
+
+.retry-button:hover, .refresh-button:hover {
+  background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
+  transform: translateY(-1px);
+}
+
+.error-details {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-12);
+  font-style: italic;
+}
+
+/* Feed Header Styles */
+.feed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-24);
+  padding-bottom: var(--space-16);
+  border-bottom: 1px solid var(--color-card-border);
+}
+
+.feed-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.feed-header p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* No Stories State */
+.no-stories {
+  text-align: center;
+  padding: var(--space-32);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px dashed var(--color-card-border);
+  border-radius: var(--radius-lg);
+}
+
+/* Dark Mode Enhancements */
+[data-theme="dark"] {
+  --color-background: var(--color-charcoal-800);
+  --color-surface: var(--color-charcoal-700);
+  --color-text: var(--color-cream-100);
+  --color-text-secondary: var(--color-gray-300);
+  --color-card-border: rgba(255, 255, 255, 0.1);
+  --color-card-border-inner: rgba(255, 255, 255, 0.08);
+  --color-secondary: rgba(255, 255, 255, 0.08);
+  --color-secondary-hover: rgba(255, 255, 255, 0.12);
+  --color-focus-ring: rgba(var(--color-teal-400-rgb), 0.4);
+
+  /* Dark mode background gradients */
+  --color-bg-1: rgba(59, 130, 246, 0.12);
+  --color-bg-2: rgba(245, 158, 11, 0.12);
+  --color-bg-3: rgba(34, 197, 94, 0.12);
+  --color-bg-4: rgba(239, 68, 68, 0.12);
+  --color-bg-5: rgba(147, 51, 234, 0.12);
+  --color-bg-6: rgba(249, 115, 22, 0.12);
+  --color-bg-7: rgba(236, 72, 153, 0.12);
+  --color-bg-8: rgba(6, 182, 212, 0.12);
+}
+
+/* Improved Focus Indicators */
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Better Mobile Experience */
+@media (max-width: 768px) {
+  .feed-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-8);
+  }
+
+  .loading, .error, .no-stories {
+    margin: var(--space-8);
+    padding: var(--space-16);
+  }
+}
+
+
+
+/* ✨ THE NARRATIVE - ENHANCED GRADIENT SYSTEM ✨ */
+
+/* 🌈 Core Gradient Definitions */
+:root {
+  /* Main Brand Gradient - The beautiful gradient you love */
+  --gradient-primary: linear-gradient(135deg, 
+    var(--color-primary) 0%, 
+    var(--color-primary-hover) 50%, 
+    var(--color-primary-active) 100%);
+    
+  --gradient-primary-hover: linear-gradient(135deg, 
+    var(--color-primary-hover) 0%, 
+    var(--color-primary-active) 50%, 
+    var(--color-primary) 100%);
+    
+  /* Extended gradient for animation */
+  --gradient-primary-animated: linear-gradient(135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 25%,
+    var(--color-primary-active) 50%,
+    var(--color-primary-hover) 75%,
+    var(--color-primary) 100%);
+    
+  /* Accent gradients for different elements */
+  --gradient-accent: linear-gradient(90deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 100%);
+    
+  --gradient-accent-vertical: linear-gradient(180deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 100%);
+    
+  /* Subtle gradients for borders and dividers */
+  --gradient-border: linear-gradient(90deg,
+    transparent 0%,
+    var(--color-primary) 20%,
+    var(--color-primary-hover) 50%,
+    var(--color-primary-active) 80%,
+    transparent 100%);
+    
+  /* For logo and special accents */
+  --gradient-logo: linear-gradient(45deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 30%,
+    var(--color-primary-active) 60%,
+    var(--color-primary-hover) 90%,
+    var(--color-primary) 100%);
+}
+
+/* 🌊 Animated Gradient Animation */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes gradient-slide-right {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* 🎭 Logo with Animated Gradient */
+.header-logo {
+  background: var(--gradient-logo);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: gradient-shift 3s ease-in-out infinite;
+  font-weight: var(--font-weight-bold);
+}
+
+/* 📰 Site Title with Gradient Effect */
+.header-title {
+  background: var(--gradient-primary);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: gradient-shift 4s ease-in-out infinite;
+}
+
+/* 🎨 Enhanced Buttons with Moving Gradients */
+.btn--primary,
+.compare-btn,
+.sports-action-btn,
+.market-action-btn,
+.read-article-btn,
+.retry-button,
+.refresh-button {
+  background: var(--gradient-primary);
+  background-size: 200% 200%;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-standard);
+}
+
+.btn--primary:hover,
+.compare-btn:hover,
+.sports-action-btn:hover,
+.market-action-btn:hover,
+.read-article-btn:hover,
+.retry-button:hover,
+.refresh-button:hover {
+  background: var(--gradient-primary-hover);
+  background-size: 200% 200%;
+  animation: gradient-shift 1.5s ease-in-out infinite;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ✨ Gradient Borders and Dividers */
+.gradient-border-bottom {
+  position: relative;
+}
+
+.gradient-border-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-border);
+  background-size: 200% 100%;
+}
+
+.gradient-border-bottom:hover::after {
+  animation: gradient-slide-right 2s ease-in-out infinite;
+}
+
+.news-header,
+.sidebar-title {
+  border-bottom: none !important;
+  position: relative;
+}
+
+.news-header::after,
+.sidebar-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-border);
+  background-size: 200% 100%;
+  animation: gradient-slide-right 3s linear infinite;
+}
+
+/* 🔄 Theme Toggle Enhanced */
+.theme-toggle {
+  background: var(--gradient-primary);
+  background-size: 200% 200%;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-toggle:hover {
+  animation: gradient-shift 2s ease-in-out infinite;
+  transform: scale(1.05);
+}
+
+/* 📱 News Cards with Gradient Accents */
+.news-summary-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.news-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-border);
+  background-size: 300% 100%;
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-standard);
+}
+
+.news-summary-card:hover::before {
+  opacity: 1;
+  animation: gradient-slide-right 2s linear infinite;
+}
+
+/* 🏷️ Source Tags with Gradient Backgrounds */
+/* Example, adapt to your structure */
+.source-item.left {
+  background: linear-gradient(135deg, 
+    rgba(var(--color-teal-500-rgb), 0.1) 0%,
+    rgba(var(--color-teal-400-rgb), 0.2) 100%);
+  border: 1px solid var(--color-bias-left);
+}
+
+.source-item.center {
+  background: linear-gradient(135deg, 
+    rgba(var(--color-slate-500-rgb), 0.1) 0%,
+    rgba(var(--color-gray-400-rgb), 0.2) 100%);
+  border: 1px solid var(--color-bias-center);
+}
+
+.source-item.right {
+  background: linear-gradient(135deg, 
+    rgba(var(--color-red-500-rgb), 0.1) 0%,
+    rgba(var(--color-red-400-rgb), 0.2) 100%);
+  border: 1px solid var(--color-bias-right);
+}
+
+.source-item:hover {
+  background-size: 200% 200%;
+  animation: gradient-shift 2s ease-in-out infinite;
+}
+
+/* 📊 Sidebar Widgets Enhanced */
+.weather-widget,
+.sports-schedule,
+.market-updates {
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-widget::before,
+.sports-schedule::before,
+.market-updates::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: var(--gradient-accent);
+  transition: left 0.8s ease-in-out;
+}
+
+.weather-widget:hover::before,
+.sports-schedule:hover::before,
+.market-updates:hover::before {
+  left: 100%;
+}
+
+/* 🌈 App Sidebar with Subtle Gradient */
+.app-sidebar {
+  background: linear-gradient(180deg,
+    var(--color-secondary) 0%,
+    var(--color-surface) 50%,
+    var(--color-secondary) 100%);
+}
+
+/* 📋 Modal Header with Gradient */
+.modal-header {
+  position: relative;
+}
+
+.modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gradient-border);
+  background-size: 200% 100%;
+  animation: gradient-slide-right 4s linear infinite;
+}
+
+/* 🎯 Hover Effects for Interactive Elements */
+.category-btn:hover,
+.filter-btn:hover {
+  background: var(--gradient-primary);
+  background-size: 200% 200%;
+  color: var(--color-btn-primary-text);
+  animation: gradient-shift 2s ease-in-out infinite;
+}
+
+/* Utility classes for gradient text and borders */
+.gradient-text {
+  background: var(--gradient-primary);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+.gradient-border {
+  border: 2px solid transparent;
+  background: linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+              var(--gradient-primary) border-box;
+  background-size: 200% 200%;
+}
+
+.gradient-border:hover {
+  animation: gradient-shift 2s ease-in-out infinite;
+}
+
+/* Dark mode gradient adjustments */
+[data-theme="dark"] {
+  --gradient-primary: linear-gradient(135deg, 
+    var(--color-teal-300) 0%, 
+    var(--color-teal-400) 50%, 
+    var(--color-teal-800) 100%);
+    
+  --gradient-primary-hover: linear-gradient(135deg, 
+    var(--color-teal-400) 0%, 
+    var(--color-teal-800) 50%, 
+    var(--color-teal-300) 100%);
+    
+  --gradient-border: linear-gradient(90deg,
+    transparent 0%,
+    var(--color-teal-300) 20%,
+    var(--color-teal-400) 50%,
+    var(--color-teal-800) 80%,
+    transparent 100%);
+    
+  --gradient-logo: linear-gradient(45deg,
+    var(--color-teal-300) 0%,
+    var(--color-teal-400) 30%,
+    var(--color-teal-800) 60%,
+    var(--color-teal-400) 90%,
+    var(--color-teal-300) 100%);
+}
+
+.gradient-element {
+  will-change: background-position;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* 📱 Mobile Optimizations */
+@media (max-width: 768px) {
+  .header-logo,
+  .header-title {
+    animation-duration: 4s;
+  }
+  
+  .news-summary-card:hover::before {
+    animation-duration: 3s;
+  }
+}
+
+/* ⚡ Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .header-logo,
+  .header-title,
+  .btn--primary:hover,
+  .compare-btn:hover,
+  .sports-action-btn:hover,
+  .market-action-btn:hover,
+  .read-article-btn:hover,
+  .theme-toggle:hover,
+  .news-summary-card:hover::before,
+  .source-item:hover,
+  .category-btn:hover,
+  .filter-btn:hover {
+    animation: none;
+  }
+  
+  .header-logo,
+  .header-title {
+    background: var(--color-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+
