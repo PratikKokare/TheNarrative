@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback, Suspense, lazy } from "react";
+import React, { useEffect, useRef, useState, useCallback, Suspense, lazy, useMemo } from "react";
 import "./App.css";
 import { ThemeProvider } from "./ThemeContext";
 import { gsap } from "gsap";
+import { ErrorBoundary } from "react-error-boundary";
 
-// Lazy load components for better performance
+// Lazy load components for better performance and code splitting
 const NewsFeed = lazy(() => import("./components/NewsFeed"));
 const SportsSchedule = lazy(() => import("./components/SportsSchedule"));
 const MarketUpdates = lazy(() => import("./components/MarketUpdates"));
@@ -11,125 +12,280 @@ const WeatherWidget = lazy(() => import("./components/WeatherWidget"));
 const ThemeToggle = lazy(() => import("./components/ThemeToggle"));
 const CompareCoverage = lazy(() => import("./components/CompareCoverage"));
 
-// Loading component for better UX
-const LoadingSpinner = () => (
-  <div className="loading-spinner">
-    <div className="spinner"></div>
+/**
+ * Enhanced Loading component with better UX
+ */
+const LoadingSpinner = React.memo(({ text = "Loading..." }) => (
+  <div className="loading-spinner" role="status" aria-live="polite">
+    <div className="spinner-ring" aria-hidden="true">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+    <p className="loading-text">{text}</p>
+  </div>
+));
+
+LoadingSpinner.displayName = 'LoadingSpinner';
+
+/**
+ * Error Fallback component for error boundaries
+ */
+const ErrorFallback = ({ error, resetErrorBoundary }) => (
+  <div className="error-fallback" role="alert">
+    <h2>🚫 Something went wrong</h2>
+    <details className="error-details">
+      <summary>Error Details</summary>
+      <pre>{error.message}</pre>
+    </details>
+    <button 
+      onClick={resetErrorBoundary}
+      className="retry-button"
+      type="button"
+    >
+      Try Again
+    </button>
   </div>
 );
 
+/**
+ * Header component with enhanced navigation
+ */
+const Header = React.memo(({ onNavigationChange, currentView }) => {
+  const headerRef = useRef(null);
+  
+  useEffect(() => {
+    if (headerRef.current) {
+      gsap.fromTo(headerRef.current, 
+        { opacity: 0, y: -20 }, 
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }
+      );
+    }
+  }, []);
+
+  const navigationItems = useMemo(() => [
+    { key: 'news', label: '📰 News Feed', description: 'Latest news articles' },
+    { key: 'weather', label: '🌤️ Weather', description: 'Current weather updates' },
+    { key: 'sports', label: '⚽ Sports', description: 'Sports schedules' },
+    { key: 'markets', label: '📈 Markets', description: 'Market updates' }
+  ], []);
+
+  return (
+    <header ref={headerRef} className="app-header" role="banner">
+      <div className="header-content">
+        <div className="logo-section">
+          <h1 className="app-title">
+            <span className="title-main">TwoSides</span>
+            <span className="title-sub">News</span>
+          </h1>
+          <p className="app-tagline">Multi-perspective news analysis</p>
+        </div>
+        
+        <nav className="main-navigation" role="navigation" aria-label="Main navigation">
+          <ul className="nav-list">
+            {navigationItems.map(({ key, label, description }) => (
+              <li key={key} className="nav-item">
+                <button
+                  onClick={() => onNavigationChange(key)}
+                  className={`nav-button ${currentView === key ? 'active' : ''}`}
+                  aria-pressed={currentView === key}
+                  title={description}
+                  type="button"
+                >
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="header-actions">
+          <Suspense fallback={<div className="theme-toggle-placeholder" />}>
+            <ThemeToggle />
+          </Suspense>
+        </div>
+      </div>
+    </header>
+  );
+});
+
+Header.displayName = 'Header';
+
+/**
+ * Main App component with enhanced architecture
+ */
 function App() {
-  const [selectedStory, setSelectedStory] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const appRef = useRef();
+  const [currentView, setCurrentView] = useState('news');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const appRef = useRef(null);
 
-  const categories = [
-    "All", "Politics", "Science", "Technology", "Finance",
-    "Sports", "Weather", "Entertainment", "Current Affairs"
-  ];
-
-  const handleStorySelect = useCallback((story) => {
-    setSelectedStory(story);
-    setShowModal(true);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setShowModal(false);
-    setTimeout(() => setSelectedStory(null), 300); // Delay to allow exit animation
-  }, []);
-
-  // Optimized GSAP animations
+  /**
+   * Initialize application with loading state
+   */
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline();
-
-      tl.from(".app-header", {
-        y: -50,
-        opacity: 0,
-        duration: 0.6,
-        ease: "power2.out"
-      })
-      .from(".app-sidebar", {
-        x: -280,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      }, "-=0.4")
-      .from(".app-main", {
-        opacity: 0,
-        y: 30,
-        duration: 0.8,
-        ease: "power2.out"
-      }, "-=0.6");
-    }, appRef);
-
-    return () => ctx.revert(); // Clean up GSAP context
-  }, []);
-
-  // Handle escape key to close modal
-  useEffect(() => {
-    const handleEscape = (event) => {
-      if (event.key === 'Escape' && showModal) {
-        closeModal();
+    const initializeApp = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Simulate initialization (API checks, etc.)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Animate app entrance
+        if (appRef.current) {
+          gsap.fromTo(appRef.current, 
+            { opacity: 0, scale: 0.95 }, 
+            { opacity: 1, scale: 1, duration: 1, ease: "power3.out" }
+          );
+        }
+        
+        setError(null);
+      } catch (err) {
+        console.error('App initialization error:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [showModal, closeModal]);
+    initializeApp();
+  }, []);
+
+  /**
+   * Handle view changes with smooth transitions
+   */
+  const handleViewChange = useCallback((newView) => {
+    if (newView === currentView) return;
+    
+    // Add exit animation
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      gsap.to(mainContent, {
+        opacity: 0,
+        y: 20,
+        duration: 0.3,
+        ease: "power2.in",
+        onComplete: () => {
+          setCurrentView(newView);
+          // Entrance animation will be handled by individual components
+          gsap.fromTo(mainContent, 
+            { opacity: 0, y: 20 }, 
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+          );
+        }
+      });
+    } else {
+      setCurrentView(newView);
+    }
+  }, [currentView]);
+
+  /**
+   * Render current view component
+   */
+  const renderCurrentView = useMemo(() => {
+    const views = {
+      news: <NewsFeed />,
+      weather: <WeatherWidget />,
+      sports: <SportsSchedule />,
+      markets: <MarketUpdates />
+    };
+
+    return views[currentView] || views.news;
+  }, [currentView]);
+
+  /**
+   * Error recovery handler
+   */
+  const handleErrorRecovery = useCallback(() => {
+    setError(null);
+    setIsLoading(true);
+    // Trigger re-initialization
+    setTimeout(() => setIsLoading(false), 500);
+  }, []);
+
+  // Show loading state during initialization
+  if (isLoading) {
+    return (
+      <div className="app-loading">
+        <LoadingSpinner text="Initializing TwoSides News..." />
+      </div>
+    );
+  }
+
+  // Show error state if initialization failed
+  if (error) {
+    return (
+      <div className="app-error">
+        <ErrorFallback 
+          error={{ message: error }} 
+          resetErrorBoundary={handleErrorRecovery} 
+        />
+      </div>
+    );
+  }
 
   return (
-    <ThemeProvider>
-      <div className="app" ref={appRef}>
-        <header className="app-header">
-          <div className="header-brand">
-            <div className="header-logo">📰</div>
-            <div className="header-content">
-              <h1 className="header-title">The Narrative</h1>
-              <p className="header-tagline">Multiple perspectives, one story</p>
-            </div>
+    <ErrorBoundary
+      FallbackComponent={ErrorFallback}
+      onError={(error, errorInfo) => {
+        console.error('App Error Boundary caught an error:', error, errorInfo);
+      }}
+      onReset={() => {
+        window.location.reload();
+      }}
+    >
+      <ThemeProvider>
+        <div ref={appRef} className="app" role="main">
+          <Header 
+            onNavigationChange={handleViewChange} 
+            currentView={currentView} 
+          />
+          
+          <main className="main-content" role="main" aria-live="polite">
+            <Suspense 
+              fallback={
+                <LoadingSpinner 
+                  text={`Loading ${currentView}...`} 
+                />
+              }
+            >
+              {renderCurrentView}
+            </Suspense>
+          </main>
+
+          {/* Accessibility improvements */}
+          <div id="announcements" className="sr-only" aria-live="polite" aria-atomic="true">
+            {/* Screen reader announcements will be inserted here */}
           </div>
-          <Suspense fallback={<div>🌙</div>}>
-            <ThemeToggle />
-          </Suspense>
-        </header>
-
-        <aside className="app-sidebar">
-          <Suspense fallback={<LoadingSpinner />}>
-            <WeatherWidget />
-            <SportsSchedule />
-            <MarketUpdates />
-          </Suspense>
-        </aside>
-
-        <main className="app-main">
-          <Suspense fallback={<LoadingSpinner />}>
-            <NewsFeed onStorySelect={handleStorySelect} />
-          </Suspense>
-        </main>
-
-        {showModal && selectedStory && (
-          <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>Coverage Comparison</h3>
-                <button 
-                  className="modal-close" 
-                  onClick={closeModal}
-                  aria-label="Close modal"
-                >
-                  ×
-                </button>
-              </div>
-              <Suspense fallback={<LoadingSpinner />}>
-                <CompareCoverage story={selectedStory} />
-              </Suspense>
-            </div>
-          </div>
-        )}
-      </div>
-    </ThemeProvider>
+        </div>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
+}
+
+// Performance monitoring (development only)
+if (process.env.NODE_ENV === 'development') {
+  // Add performance observers
+  if ('PerformanceObserver' in window) {
+    const observer = new PerformanceObserver((list) => {
+      list.getEntries().forEach((entry) => {
+        if (entry.entryType === 'largest-contentful-paint') {
+          console.log('LCP:', entry.startTime);
+        }
+        if (entry.entryType === 'cumulative-layout-shift') {
+          console.log('CLS:', entry.value);
+        }
+      });
+    });
+    
+    try {
+      observer.observe({ entryTypes: ['largest-contentful-paint', 'layout-shift'] });
+    } catch (e) {
+      // Browser might not support all entry types
+      console.warn('Performance observer setup failed:', e);
+    }
+  }
 }
 
 export default App;
