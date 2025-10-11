@@ -1,23 +1,21 @@
-import React, { useEffect, useRef, useState, useCallback, Suspense, lazy, useMemo } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import "./App.css";
 import { ThemeProvider } from "./ThemeContext";
 import { gsap } from "gsap";
-import { ErrorBoundary } from "react-error-boundary";
 
-// Lazy load components for better performance and code splitting
-const NewsFeed = lazy(() => import("./components/NewsFeed"));
-const SportsSchedule = lazy(() => import("./components/SportsSchedule"));
-const MarketUpdates = lazy(() => import("./components/MarketUpdates"));
-const WeatherWidget = lazy(() => import("./components/WeatherWidget"));
-const ThemeToggle = lazy(() => import("./components/ThemeToggle"));
-const CompareCoverage = lazy(() => import("./components/CompareCoverage"));
+// Direct imports (no lazy loading to avoid complexity)
+import NewsFeed from "./components/NewsFeed";
+import SportsSchedule from "./components/SportsSchedule";
+import MarketUpdates from "./components/MarketUpdates";
+import WeatherWidget from "./components/WeatherWidget";
+import ThemeToggle from "./components/ThemeToggle";
 
 /**
- * Enhanced Loading component with better UX
+ * Simple Loading component
  */
-const LoadingSpinner = React.memo(({ text = "Loading..." }) => (
-  <div className="loading-spinner" role="status" aria-live="polite">
-    <div className="spinner-ring" aria-hidden="true">
+const LoadingSpinner = ({ text = "Loading..." }) => (
+  <div className="loading-spinner">
+    <div className="spinner-ring">
       <div></div>
       <div></div>
       <div></div>
@@ -25,34 +23,25 @@ const LoadingSpinner = React.memo(({ text = "Loading..." }) => (
     </div>
     <p className="loading-text">{text}</p>
   </div>
-));
-
-LoadingSpinner.displayName = 'LoadingSpinner';
+);
 
 /**
- * Error Fallback component for error boundaries
+ * Simple Error component
  */
-const ErrorFallback = ({ error, resetErrorBoundary }) => (
-  <div className="error-fallback" role="alert">
+const ErrorMessage = ({ message, onRetry }) => (
+  <div className="error-fallback">
     <h2>🚫 Something went wrong</h2>
-    <details className="error-details">
-      <summary>Error Details</summary>
-      <pre>{error.message}</pre>
-    </details>
-    <button 
-      onClick={resetErrorBoundary}
-      className="retry-button"
-      type="button"
-    >
+    <p>{message}</p>
+    <button onClick={onRetry} className="retry-button">
       Try Again
     </button>
   </div>
 );
 
 /**
- * Header component with enhanced navigation
+ * Header component
  */
-const Header = React.memo(({ onNavigationChange, currentView }) => {
+const Header = ({ onNavigationChange, currentView }) => {
   const headerRef = useRef(null);
   
   useEffect(() => {
@@ -64,15 +53,15 @@ const Header = React.memo(({ onNavigationChange, currentView }) => {
     }
   }, []);
 
-  const navigationItems = useMemo(() => [
-    { key: 'news', label: '📰 News Feed', description: 'Latest news articles' },
-    { key: 'weather', label: '🌤️ Weather', description: 'Current weather updates' },
-    { key: 'sports', label: '⚽ Sports', description: 'Sports schedules' },
-    { key: 'markets', label: '📈 Markets', description: 'Market updates' }
-  ], []);
+  const navigationItems = [
+    { key: 'news', label: '📰 News Feed' },
+    { key: 'weather', label: '🌤️ Weather' },
+    { key: 'sports', label: '⚽ Sports' },
+    { key: 'markets', label: '📈 Markets' }
+  ];
 
   return (
-    <header ref={headerRef} className="app-header" role="banner">
+    <header ref={headerRef} className="app-header">
       <div className="header-content">
         <div className="logo-section">
           <h1 className="app-title">
@@ -82,16 +71,13 @@ const Header = React.memo(({ onNavigationChange, currentView }) => {
           <p className="app-tagline">Multi-perspective news analysis</p>
         </div>
         
-        <nav className="main-navigation" role="navigation" aria-label="Main navigation">
+        <nav className="main-navigation">
           <ul className="nav-list">
-            {navigationItems.map(({ key, label, description }) => (
+            {navigationItems.map(({ key, label }) => (
               <li key={key} className="nav-item">
                 <button
                   onClick={() => onNavigationChange(key)}
                   className={`nav-button ${currentView === key ? 'active' : ''}`}
-                  aria-pressed={currentView === key}
-                  title={description}
-                  type="button"
                 >
                   {label}
                 </button>
@@ -101,19 +87,15 @@ const Header = React.memo(({ onNavigationChange, currentView }) => {
         </nav>
 
         <div className="header-actions">
-          <Suspense fallback={<div className="theme-toggle-placeholder" />}>
-            <ThemeToggle />
-          </Suspense>
+          <ThemeToggle />
         </div>
       </div>
     </header>
   );
-});
-
-Header.displayName = 'Header';
+};
 
 /**
- * Main App component with enhanced architecture
+ * Main App component - simplified version
  */
 function App() {
   const [currentView, setCurrentView] = useState('news');
@@ -121,15 +103,13 @@ function App() {
   const [error, setError] = useState(null);
   const appRef = useRef(null);
 
-  /**
-   * Initialize application with loading state
-   */
+  // Initialize application
   useEffect(() => {
     const initializeApp = async () => {
       try {
         setIsLoading(true);
         
-        // Simulate initialization (API checks, etc.)
+        // Simulate initialization
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Animate app entrance
@@ -152,13 +132,10 @@ function App() {
     initializeApp();
   }, []);
 
-  /**
-   * Handle view changes with smooth transitions
-   */
+  // Handle view changes with transitions
   const handleViewChange = useCallback((newView) => {
     if (newView === currentView) return;
     
-    // Add exit animation
     const mainContent = document.querySelector('.main-content');
     if (mainContent) {
       gsap.to(mainContent, {
@@ -168,7 +145,6 @@ function App() {
         ease: "power2.in",
         onComplete: () => {
           setCurrentView(newView);
-          // Entrance animation will be handled by individual components
           gsap.fromTo(mainContent, 
             { opacity: 0, y: 20 }, 
             { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
@@ -180,31 +156,40 @@ function App() {
     }
   }, [currentView]);
 
-  /**
-   * Render current view component
-   */
-  const renderCurrentView = useMemo(() => {
-    const views = {
-      news: <NewsFeed />,
-      weather: <WeatherWidget />,
-      sports: <SportsSchedule />,
-      markets: <MarketUpdates />
-    };
+  // Render current view
+  const renderCurrentView = () => {
+    try {
+      switch (currentView) {
+        case 'news':
+          return <NewsFeed />;
+        case 'weather':
+          return <WeatherWidget />;
+        case 'sports':
+          return <SportsSchedule />;
+        case 'markets':
+          return <MarketUpdates />;
+        default:
+          return <NewsFeed />;
+      }
+    } catch (componentError) {
+      console.error('Component render error:', componentError);
+      return (
+        <ErrorMessage 
+          message={`Failed to load ${currentView} component`}
+          onRetry={() => window.location.reload()}
+        />
+      );
+    }
+  };
 
-    return views[currentView] || views.news;
-  }, [currentView]);
-
-  /**
-   * Error recovery handler
-   */
-  const handleErrorRecovery = useCallback(() => {
+  // Error recovery
+  const handleErrorRecovery = () => {
     setError(null);
     setIsLoading(true);
-    // Trigger re-initialization
     setTimeout(() => setIsLoading(false), 500);
-  }, []);
+  };
 
-  // Show loading state during initialization
+  // Show loading state
   if (isLoading) {
     return (
       <div className="app-loading">
@@ -213,79 +198,37 @@ function App() {
     );
   }
 
-  // Show error state if initialization failed
+  // Show error state
   if (error) {
     return (
       <div className="app-error">
-        <ErrorFallback 
-          error={{ message: error }} 
-          resetErrorBoundary={handleErrorRecovery} 
+        <ErrorMessage 
+          message={error} 
+          onRetry={handleErrorRecovery} 
         />
       </div>
     );
   }
 
   return (
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onError={(error, errorInfo) => {
-        console.error('App Error Boundary caught an error:', error, errorInfo);
-      }}
-      onReset={() => {
-        window.location.reload();
-      }}
-    >
-      <ThemeProvider>
-        <div ref={appRef} className="app" role="main">
-          <Header 
-            onNavigationChange={handleViewChange} 
-            currentView={currentView} 
-          />
-          
-          <main className="main-content" role="main" aria-live="polite">
-            <Suspense 
-              fallback={
-                <LoadingSpinner 
-                  text={`Loading ${currentView}...`} 
-                />
-              }
-            >
-              {renderCurrentView}
-            </Suspense>
-          </main>
+    <ThemeProvider>
+      <div ref={appRef} className="app">
+        <Header 
+          onNavigationChange={handleViewChange} 
+          currentView={currentView} 
+        />
+        
+        <main className="main-content">
+          {renderCurrentView()}
+        </main>
 
-          {/* Accessibility improvements */}
-          <div id="announcements" className="sr-only" aria-live="polite" aria-atomic="true">
-            {/* Screen reader announcements will be inserted here */}
-          </div>
+        {/* Accessibility announcements */}
+        <div className="sr-only" aria-live="polite">
+          {/* Screen reader announcements will be inserted here */}
         </div>
-      </ThemeProvider>
-    </ErrorBoundary>
+      </div>
+    </ThemeProvider>
   );
-}
-
-// Performance monitoring (development only)
-if (process.env.NODE_ENV === 'development') {
-  // Add performance observers
-  if ('PerformanceObserver' in window) {
-    const observer = new PerformanceObserver((list) => {
-      list.getEntries().forEach((entry) => {
-        if (entry.entryType === 'largest-contentful-paint') {
-          console.log('LCP:', entry.startTime);
-        }
-        if (entry.entryType === 'cumulative-layout-shift') {
-          console.log('CLS:', entry.value);
-        }
-      });
-    });
-    
-    try {
-      observer.observe({ entryTypes: ['largest-contentful-paint', 'layout-shift'] });
-    } catch (e) {
-      // Browser might not support all entry types
-      console.warn('Performance observer setup failed:', e);
-    }
-  }
 }
 
 export default App;
