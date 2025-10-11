@@ -5330,3 +5330,125 @@ select.form-control {
     padding: var(--space-24);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ==============================================
+   🎨 UI IMPROVEMENTS - PRESERVE ALL EXISTING FUNCTIONALITY
+   ============================================== */
+
+/* Override ONLY the specific things you want changed */
+
+/* 1. REMOVE THE STATS BAR */
+.news-feed-header,
+.stats-bar {
+  display: none !important;
+}
+
+/* 2. MOVE TO 3-CARD GRID LAYOUT */
+.news-feed,
+.news-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)) !important;
+  gap: 24px !important;
+  padding: 32px !important;
+}
+
+/* 3. IMPROVE NEWS CARD SIZING */
+.news-card,
+.news-summary-card {
+  height: auto !important;
+  min-height: 400px !important;
+  max-height: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.news-card-content {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+.news-text {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.news-summary {
+  flex: 1 !important;
+}
+
+/* 4. MUTED COLOR PALETTE OVERRIDES */
+:root {
+  /* Override only the accent colors */
+  --accent-teal: #4a9b8e !important;
+  --accent-sage: #87a96b !important;
+  --accent-coral: #d4756b !important;
+  --accent-blue: #6b8cc4 !important;
+}
+
+/* Apply muted colors to bias indicators */
+.bias-indicator.left,
+.source-item.left::before,
+.coverage-bias.left {
+  background: var(--accent-blue) !important;
+  color: var(--accent-blue) !important;
+}
+
+.bias-indicator.center,
+.source-item.center::before,
+.coverage-bias.center {
+  background: var(--accent-sage) !important;
+  color: var(--accent-sage) !important;
+}
+
+.bias-indicator.right,
+.source-item.right::before,
+.coverage-bias.right {
+  background: var(--accent-coral) !important;
+  color: var(--accent-coral) !important;
+}
+
+/* 5. RESPONSIVE ADJUSTMENTS */
+@media (max-width: 1200px) {
+  .news-feed,
+  .news-grid {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) !important;
+    gap: 20px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .news-feed,
+  .news-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: 16px !important;
+    padding: 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .news-feed,
+  .news-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    padding: 16px !important;
+  }
+}
