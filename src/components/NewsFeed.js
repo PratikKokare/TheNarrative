@@ -38,19 +38,20 @@ const NewsFeed = () => {
   });
 
   const containerRef = useRef();
+  // Fixed API URL
   const API_URL = 'https://twosides-backend.onrender.com';
-
 
   useEffect(() => {
     loadInitialData();
     loadStats();
   }, []);
 
+  // FIXED: Only trigger when actual filter values change, not when page changes
   useEffect(() => {
     if (filters.page === 1) {
       loadInitialData();
     }
-  }, [filters]);
+  }, [filters.category, filters.bias, filters.sortBy, filters.sortOrder, filters.search, filters.dateFrom, filters.dateTo, view]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -72,6 +73,7 @@ const NewsFeed = () => {
 
   const loadArticles = async (reset = false) => {
     try {
+      console.log('Loading articles, reset:', reset);
       const params = new URLSearchParams({
         page: reset ? '1' : filters.page.toString(),
         limit: '20',
@@ -86,6 +88,9 @@ const NewsFeed = () => {
 
       const response = await axios.get(`${API_URL}/api/news?${params}`);
       const { articles: newArticles, pagination } = response.data;
+      
+      console.log('Articles received:', newArticles.length);
+      console.log('First article:', newArticles[0]);
 
       if (reset) {
         setArticles(newArticles);
@@ -96,13 +101,7 @@ const NewsFeed = () => {
 
       setHasMore(pagination.hasMore);
       
-      // Animate new articles in
-      setTimeout(() => {
-        gsap.fromTo('.news-card:last-child', 
-          { opacity: 0, y: 30 }, 
-          { opacity: 1, y: 0, duration: 0.5 }
-        );
-      }, 100);
+      // Removed problematic GSAP animation that might cause issues
 
     } catch (error) {
       console.error('Error loading articles:', error);
@@ -195,7 +194,14 @@ const NewsFeed = () => {
       <div className="news-card-content">
         {article.imageUrl && (
           <div className="news-image">
-            <img src={article.imageUrl} alt={article.title} loading="lazy" />
+            <img 
+              src={article.imageUrl} 
+              alt={article.title} 
+              loading="lazy"
+              onError={(e) => {
+                e.target.style.display = 'none'; // Hide broken images
+              }}
+            />
           </div>
         )}
         
@@ -414,9 +420,9 @@ const NewsFeed = () => {
             >
               <div className="news-grid">
                 {view === 'articles' ? (
-                  articles.map(renderArticleCard)
+                  articles.length > 0 ? articles.map(renderArticleCard) : <p>No articles found</p>
                 ) : (
-                  storyGroups.map(renderStoryGroupCard)
+                  storyGroups.length > 0 ? storyGroups.map(renderStoryGroupCard) : <p>No story groups found</p>
                 )}
               </div>
             </InfiniteScroll>
@@ -428,4 +434,3 @@ const NewsFeed = () => {
 };
 
 export default NewsFeed;
-
