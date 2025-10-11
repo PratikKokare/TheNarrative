@@ -1,19 +1,17 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import axios from 'axios';
 import moment from 'moment';
 import { gsap } from 'gsap';
-import { useIntersectionObserver } from 'react-intersection-observer';
 import NewsSummaryCard from './NewsSummaryCard';
-import CompareCoverage from './CompareCoverage';
 import FilterSidebar from './FilterSidebar';
 
 /**
- * Enhanced NewsFeed component with performance optimizations
+ * Simplified NewsFeed component without advanced React features
  */
-const NewsFeed = React.memo(() => {
+const NewsFeed = () => {
   // State management
   const [articles, setArticles] = useState([]);
   const [storyGroups, setStoryGroups] = useState([]);
@@ -22,7 +20,7 @@ const NewsFeed = React.memo(() => {
   const [error, setError] = useState(null);
   const [selectedStory, setSelectedStory] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [view, setView] = useState('articles'); // 'articles' or 'stories'
+  const [view, setView] = useState('articles');
   const [filters, setFilters] = useState({
     category: 'all',
     bias: 'all',
@@ -40,25 +38,17 @@ const NewsFeed = React.memo(() => {
     categoryStats: {}
   });
 
-  // Refs and observers
   const containerRef = useRef();
   const searchTimeoutRef = useRef();
-  const { ref: sentryRef, inView } = useIntersectionObserver();
 
-  // Memoized API URL
-  const API_URL = useMemo(() => 
-    process.env.REACT_APP_API_URL || 'https://twosides-backend.onrender.com', 
-    []
-  );
+  // API URL
+  const API_URL = process.env.REACT_APP_API_URL || 'https://twosides-backend.onrender.com';
 
-  /**
-   * Load initial data on component mount
-   */
+  // Load initial data
   useEffect(() => {
     loadInitialData();
     loadStats();
     
-    // Cleanup function
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
@@ -66,9 +56,7 @@ const NewsFeed = React.memo(() => {
     };
   }, []);
 
-  /**
-   * Handle filter changes with debouncing
-   */
+  // Handle filter changes
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -78,7 +66,7 @@ const NewsFeed = React.memo(() => {
       if (filters.page === 1) {
         loadInitialData();
       }
-    }, filters.search ? 300 : 0); // Debounce search queries
+    }, filters.search ? 300 : 0);
     
     return () => {
       if (searchTimeoutRef.current) {
@@ -87,9 +75,6 @@ const NewsFeed = React.memo(() => {
     };
   }, [filters.category, filters.bias, filters.sortBy, filters.sortOrder, filters.search, filters.dateFrom, filters.dateTo, view]);
 
-  /**
-   * Load initial data with error handling
-   */
   const loadInitialData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -110,9 +95,6 @@ const NewsFeed = React.memo(() => {
     }
   }, [view, API_URL]);
 
-  /**
-   * Load articles with optimized parameters
-   */
   const loadArticles = useCallback(async (reset = false) => {
     try {
       const params = new URLSearchParams({
@@ -128,8 +110,7 @@ const NewsFeed = React.memo(() => {
       });
 
       const response = await axios.get(`${API_URL}/api/news?${params}`, {
-        timeout: 10000, // 10 second timeout
-        signal: AbortController ? new AbortController().signal : undefined
+        timeout: 10000
       });
 
       const { articles: newArticles, pagination } = response.data;
@@ -146,12 +127,16 @@ const NewsFeed = React.memo(() => {
 
       // Animate new articles
       if (newArticles.length > 0 && !reset) {
-        const newElements = document.querySelectorAll('.article-card:not(.animated)');
-        gsap.fromTo(newElements, 
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" }
-        );
-        newElements.forEach(el => el.classList.add('animated'));
+        setTimeout(() => {
+          const newElements = document.querySelectorAll('.article-card:not(.animated)');
+          if (newElements.length > 0) {
+            gsap.fromTo(newElements, 
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" }
+            );
+            newElements.forEach(el => el.classList.add('animated'));
+          }
+        }, 100);
       }
 
     } catch (err) {
@@ -161,9 +146,6 @@ const NewsFeed = React.memo(() => {
     }
   }, [filters, API_URL]);
 
-  /**
-   * Load story groups with error handling
-   */
   const loadStoryGroups = useCallback(async (reset = false) => {
     try {
       const params = new URLSearchParams({
@@ -195,9 +177,6 @@ const NewsFeed = React.memo(() => {
     }
   }, [filters, API_URL]);
 
-  /**
-   * Load statistics data
-   */
   const loadStats = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/api/news/stats`, {
@@ -209,9 +188,6 @@ const NewsFeed = React.memo(() => {
     }
   }, [API_URL]);
 
-  /**
-   * Load more content for infinite scroll
-   */
   const loadMore = useCallback(() => {
     setFilters(prev => ({ ...prev, page: prev.page + 1 }));
     if (view === 'articles') {
@@ -221,9 +197,6 @@ const NewsFeed = React.memo(() => {
     }
   }, [view, loadArticles, loadStoryGroups]);
 
-  /**
-   * Handle story selection
-   */
   const handleStoryClick = useCallback(async (storyId) => {
     try {
       const response = await axios.get(`${API_URL}/api/news/stories/${storyId}`, {
@@ -236,16 +209,10 @@ const NewsFeed = React.memo(() => {
     }
   }, [API_URL]);
 
-  /**
-   * Handle filter changes
-   */
   const handleFiltersChange = useCallback((newFilters) => {
     setFilters(newFilters);
   }, []);
 
-  /**
-   * Handle view toggle
-   */
   const handleViewToggle = useCallback((newView) => {
     if (newView !== view) {
       setView(newView);
@@ -253,9 +220,6 @@ const NewsFeed = React.memo(() => {
     }
   }, [view]);
 
-  /**
-   * Utility functions
-   */
   const getBiasColor = useCallback((bias) => {
     const colors = {
       'left': '#4285f4',
@@ -266,36 +230,16 @@ const NewsFeed = React.memo(() => {
     return colors[bias] || colors.unknown;
   }, []);
 
-  const getBiasLabel = useCallback((bias) => {
-    const labels = {
-      'left': 'Left Leaning',
-      'center': 'Center',
-      'right': 'Right Leaning',
-      'unknown': 'Unknown'
-    };
-    return labels[bias] || labels.unknown;
-  }, []);
-
-  const formatTimeAgo = useCallback((date) => {
-    return moment(date).fromNow();
-  }, []);
-
-  /**
-   * Render article card with memoization
-   */
   const renderArticleCard = useCallback((article) => (
-    <div key={article._id} className="article-card" ref={sentryRef}>
+    <div key={article._id} className="article-card">
       <NewsSummaryCard 
         article={article}
         onBiasClick={(bias) => setFilters(prev => ({ ...prev, bias, page: 1 }))}
         onCategoryClick={(category) => setFilters(prev => ({ ...prev, category, page: 1 }))}
       />
     </div>
-  ), [sentryRef]);
+  ), []);
 
-  /**
-   * Render story group card
-   */
   const renderStoryGroupCard = useCallback((storyGroup) => (
     <div key={storyGroup._id} className="story-group-card">
       <div className="story-header">
@@ -304,6 +248,7 @@ const NewsFeed = React.memo(() => {
           onClick={() => handleStoryClick(storyGroup._id)}
           role="button"
           tabIndex={0}
+          onKeyPress={(e) => e.key === 'Enter' && handleStoryClick(storyGroup._id)}
         >
           {storyGroup.mainHeadline}
         </h3>
@@ -338,10 +283,7 @@ const NewsFeed = React.memo(() => {
     </div>
   ), [handleStoryClick, getBiasColor]);
 
-  /**
-   * Render loading skeleton
-   */
-  const renderSkeleton = useCallback(() => (
+  const renderSkeleton = () => (
     <div className="skeleton-container">
       {Array.from({ length: 5 }, (_, index) => (
         <div key={index} className="skeleton-card">
@@ -354,12 +296,9 @@ const NewsFeed = React.memo(() => {
         </div>
       ))}
     </div>
-  ), []);
+  );
 
-  /**
-   * Render end message
-   */
-  const renderEndMessage = useCallback(() => (
+  const renderEndMessage = () => (
     <div className="end-message">
       <h3>🎉 You've reached the end of the feed!</h3>
       <p>Check back later for more {view === 'articles' ? 'articles' : 'stories'}.</p>
@@ -371,11 +310,15 @@ const NewsFeed = React.memo(() => {
         Refresh Stats
       </button>
     </div>
-  ), [view, loadStats]);
+  );
 
-  /**
-   * Main render
-   */
+  const LoadingSpinner = ({ text }) => (
+    <div className="loading-spinner">
+      <div className="spinner"></div>
+      <span className="loading-text">{text}</span>
+    </div>
+  );
+
   return (
     <div className="news-feed" ref={containerRef}>
       <FilterSidebar
@@ -394,7 +337,6 @@ const NewsFeed = React.memo(() => {
               onClick={() => handleViewToggle('articles')}
               className={`view-button ${view === 'articles' ? 'active' : ''}`}
               type="button"
-              aria-pressed={view === 'articles'}
             >
               📰 Articles ({stats.totalArticles})
             </button>
@@ -402,7 +344,6 @@ const NewsFeed = React.memo(() => {
               onClick={() => handleViewToggle('stories')}
               className={`view-button ${view === 'stories' ? 'active' : ''}`}
               type="button"
-              aria-pressed={view === 'stories'}
             >
               📚 Stories ({storyGroups.length})
             </button>
@@ -413,7 +354,6 @@ const NewsFeed = React.memo(() => {
               onClick={() => setShowFilters(!showFilters)}
               className="filter-toggle"
               type="button"
-              aria-expanded={showFilters}
             >
               🔍 Filters
             </button>
@@ -422,7 +362,7 @@ const NewsFeed = React.memo(() => {
 
         {/* Error Display */}
         {error && (
-          <div className="error-message" role="alert">
+          <div className="error-message">
             <p>{error}</p>
             <button onClick={loadInitialData} type="button">
               Try Again
@@ -470,34 +410,27 @@ const NewsFeed = React.memo(() => {
 
       {/* Story Detail Modal */}
       {selectedStory && (
-        <CompareCoverage
-          story={selectedStory}
-          onClose={() => setSelectedStory(null)}
-        />
+        <div className="modal-overlay" onClick={() => setSelectedStory(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{selectedStory.mainHeadline}</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setSelectedStory(null)}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>{selectedStory.summary}</p>
+              {/* Add more story details here */}
+            </div>
+          </div>
+        </div>
       )}
-
-      {/* Accessibility announcements */}
-      <div 
-        className="sr-only" 
-        aria-live="polite" 
-        aria-atomic="true"
-      >
-        {loading && `Loading ${view}...`}
-        {error && `Error: ${error}`}
-      </div>
     </div>
   );
-});
-
-// Performance optimization
-const LoadingSpinner = React.memo(({ text }) => (
-  <div className="loading-spinner" role="status" aria-live="polite">
-    <div className="spinner" aria-hidden="true"></div>
-    <span className="loading-text">{text}</span>
-  </div>
-));
-
-NewsFeed.displayName = 'NewsFeed';
-LoadingSpinner.displayName = 'LoadingSpinner';
+};
 
 export default NewsFeed;
