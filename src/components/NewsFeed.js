@@ -38,7 +38,8 @@ const NewsFeed = () => {
   });
 
   const containerRef = useRef();
-  const API_URL = process.env.REACT_APP_API_URL || 'https://twosides-backend.onrender.com';
+  const API_URL = 'https://twosides-backend.onrender.com';
+
 
   useEffect(() => {
     loadInitialData();
@@ -427,3 +428,4 @@ const NewsFeed = () => {
 };
 
 export default NewsFeed;
+
