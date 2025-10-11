@@ -5,22 +5,20 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import axios from 'axios';
 import moment from 'moment';
 import { gsap } from 'gsap';
+
 import NewsSummaryCard from './NewsSummaryCard';
+import CompareCoverage from './CompareCoverage';
 import FilterSidebar from './FilterSidebar';
 
-/**
- * Simplified NewsFeed component without advanced React features
- */
 const NewsFeed = () => {
-  // State management
   const [articles, setArticles] = useState([]);
   const [storyGroups, setStoryGroups] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [selectedStory, setSelectedStory] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [view, setView] = useState('articles');
+  const [view, setView] = useState('articles'); // 'articles' or 'stories'
+  
   const [filters, setFilters] = useState({
     category: 'all',
     bias: 'all',
@@ -31,6 +29,7 @@ const NewsFeed = () => {
     search: '',
     page: 1
   });
+
   const [stats, setStats] = useState({
     totalArticles: 0,
     lastUpdate: null,
@@ -39,45 +38,23 @@ const NewsFeed = () => {
   });
 
   const containerRef = useRef();
-  const searchTimeoutRef = useRef();
+  // Fixed API URL
+  const API_URL = 'https://twosides-backend.onrender.com';
 
-  // API URL
-  const API_URL = process.env.REACT_APP_API_URL || 'https://twosides-backend.onrender.com';
-
-  // Load initial data
   useEffect(() => {
     loadInitialData();
     loadStats();
-    
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
   }, []);
 
-  // Handle filter changes
+  // FIXED: Only trigger when actual filter values change, not when page changes
   useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
+    if (filters.page === 1) {
+      loadInitialData();
     }
-    
-    searchTimeoutRef.current = setTimeout(() => {
-      if (filters.page === 1) {
-        loadInitialData();
-      }
-    }, filters.search ? 300 : 0);
-    
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
   }, [filters.category, filters.bias, filters.sortBy, filters.sortOrder, filters.search, filters.dateFrom, filters.dateTo, view]);
 
-  const loadInitialData = useCallback(async () => {
+  const loadInitialData = async () => {
     setLoading(true);
-    setError(null);
     setArticles([]);
     setStoryGroups([]);
     
@@ -87,33 +64,33 @@ const NewsFeed = () => {
       } else {
         await loadStoryGroups(true);
       }
-    } catch (err) {
-      console.error('Error loading initial data:', err);
-      setError('Failed to load news data. Please try again.');
+    } catch (error) {
+      console.error('Error loading initial data:', error);
     } finally {
       setLoading(false);
     }
-  }, [view, API_URL]);
+  };
 
-  const loadArticles = useCallback(async (reset = false) => {
+  const loadArticles = async (reset = false) => {
     try {
+      console.log('Loading articles, reset:', reset);
       const params = new URLSearchParams({
         page: reset ? '1' : filters.page.toString(),
         limit: '20',
-        sortBy: filters.sortBy,
-        sortOrder: filters.sortOrder,
         ...(filters.category !== 'all' && { category: filters.category }),
         ...(filters.bias !== 'all' && { bias: filters.bias }),
-        ...(filters.search && { search: filters.search.trim() }),
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        ...(filters.search && { search: filters.search }),
         ...(filters.dateFrom && { dateFrom: filters.dateFrom }),
         ...(filters.dateTo && { dateTo: filters.dateTo })
       });
 
-      const response = await axios.get(`${API_URL}/api/news?${params}`, {
-        timeout: 10000
-      });
-
+      const response = await axios.get(`${API_URL}/api/news?${params}`);
       const { articles: newArticles, pagination } = response.data;
+      
+      console.log('Articles received:', newArticles.length);
+      console.log('First article:', newArticles[0]);
 
       if (reset) {
         setArticles(newArticles);
@@ -123,30 +100,16 @@ const NewsFeed = () => {
       }
 
       setHasMore(pagination.hasMore);
-      setError(null);
+      
+      // Removed problematic GSAP animation that might cause issues
 
-      // Animate new articles
-      if (newArticles.length > 0 && !reset) {
-        setTimeout(() => {
-          const newElements = document.querySelectorAll('.article-card:not(.animated)');
-          if (newElements.length > 0) {
-            gsap.fromTo(newElements, 
-              { opacity: 0, y: 20 },
-              { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" }
-            );
-            newElements.forEach(el => el.classList.add('animated'));
-          }
-        }, 100);
-      }
-
-    } catch (err) {
-      console.error('Error loading articles:', err);
-      setError('Failed to load articles. Please check your connection.');
+    } catch (error) {
+      console.error('Error loading articles:', error);
       setHasMore(false);
     }
-  }, [filters, API_URL]);
+  };
 
-  const loadStoryGroups = useCallback(async (reset = false) => {
+  const loadStoryGroups = async (reset = false) => {
     try {
       const params = new URLSearchParams({
         page: reset ? '1' : filters.page.toString(),
@@ -154,10 +117,7 @@ const NewsFeed = () => {
         ...(filters.category !== 'all' && { category: filters.category })
       });
 
-      const response = await axios.get(`${API_URL}/api/news/stories?${params}`, {
-        timeout: 10000
-      });
-
+      const response = await axios.get(`${API_URL}/api/news/stories?${params}`);
       const { storyGroups: newStoryGroups, pagination } = response.data;
 
       if (reset) {
@@ -168,267 +128,307 @@ const NewsFeed = () => {
       }
 
       setHasMore(pagination.hasMore);
-      setError(null);
 
-    } catch (err) {
-      console.error('Error loading story groups:', err);
-      setError('Failed to load story groups. Please try again.');
+    } catch (error) {
+      console.error('Error loading story groups:', error);
       setHasMore(false);
     }
-  }, [filters, API_URL]);
+  };
 
-  const loadStats = useCallback(async () => {
+  const loadStats = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/news/stats`, {
-        timeout: 5000
-      });
+      const response = await axios.get(`${API_URL}/api/news/stats`);
       setStats(response.data);
-    } catch (err) {
-      console.error('Error loading stats:', err);
+    } catch (error) {
+      console.error('Error loading stats:', error);
     }
-  }, [API_URL]);
+  };
 
-  const loadMore = useCallback(() => {
+  const loadMore = () => {
     setFilters(prev => ({ ...prev, page: prev.page + 1 }));
+    
     if (view === 'articles') {
       loadArticles();
     } else {
       loadStoryGroups();
     }
-  }, [view, loadArticles, loadStoryGroups]);
+  };
 
-  const handleStoryClick = useCallback(async (storyId) => {
+  const handleStoryClick = async (storyId) => {
     try {
-      const response = await axios.get(`${API_URL}/api/news/stories/${storyId}`, {
-        timeout: 10000
-      });
+      const response = await axios.get(`${API_URL}/api/news/stories/${storyId}`);
       setSelectedStory(response.data);
-    } catch (err) {
-      console.error('Error loading story details:', err);
-      setError('Failed to load story details.');
+    } catch (error) {
+      console.error('Error loading story details:', error);
     }
-  }, [API_URL]);
+  };
 
   const handleFiltersChange = useCallback((newFilters) => {
     setFilters(newFilters);
   }, []);
 
-  const handleViewToggle = useCallback((newView) => {
-    if (newView !== view) {
-      setView(newView);
-      setFilters(prev => ({ ...prev, page: 1 }));
+  const getBiasColor = (bias) => {
+    switch(bias) {
+      case 'left': return '#4285f4';
+      case 'center': return '#9c27b0';  
+      case 'right': return '#f44336';
+      default: return '#9e9e9e';
     }
-  }, [view]);
+  };
 
-  const getBiasColor = useCallback((bias) => {
-    const colors = {
-      'left': '#4285f4',
-      'center': '#9c27b0',
-      'right': '#f44336',
-      'unknown': '#9e9e9e'
-    };
-    return colors[bias] || colors.unknown;
-  }, []);
+  const getBiasLabel = (bias) => {
+    switch(bias) {
+      case 'left': return 'Left Leaning';
+      case 'center': return 'Center';
+      case 'right': return 'Right Leaning';
+      default: return 'Unknown';
+    }
+  };
 
-  const renderArticleCard = useCallback((article) => (
-    <div key={article._id} className="article-card">
-      <NewsSummaryCard 
-        article={article}
-        onBiasClick={(bias) => setFilters(prev => ({ ...prev, bias, page: 1 }))}
-        onCategoryClick={(category) => setFilters(prev => ({ ...prev, category, page: 1 }))}
-      />
+  const formatTimeAgo = (date) => {
+    return moment(date).fromNow();
+  };
+
+  const renderArticleCard = (article) => (
+    <div key={article._id} className="news-card" data-bias={article.articleBias}>
+      <div className="news-card-content">
+        {article.imageUrl && (
+          <div className="news-image">
+            <img 
+              src={article.imageUrl} 
+              alt={article.title} 
+              loading="lazy"
+              onError={(e) => {
+                e.target.style.display = 'none'; // Hide broken images
+              }}
+            />
+          </div>
+        )}
+        
+        <div className="news-text">
+          <div className="news-meta">
+            <span className="news-source">{article.source.name}</span>
+            <span className="news-date">{formatTimeAgo(article.publishedAt)}</span>
+            <div className="news-badges">
+              <span className="category-badge">{article.category}</span>
+              <span 
+                className="bias-badge"
+                style={{ backgroundColor: getBiasColor(article.articleBias) }}
+              >
+                {getBiasLabel(article.articleBias)}
+              </span>
+              {article.biasConfidence > 0.7 && (
+                <span className="confidence-badge">High Confidence</span>
+              )}
+            </div>
+          </div>
+          
+          <h3 className="news-title">
+            {article.aiHeading || article.title}
+          </h3>
+          
+          <p className="news-summary">
+            {article.summary || article.description}
+          </p>
+          
+          {article.keywords && article.keywords.length > 0 && (
+            <div className="news-keywords">
+              {article.keywords.slice(0, 3).map((keyword, index) => (
+                <span key={index} className="keyword-tag">
+                  {keyword}
+                </span>
+              ))}
+            </div>
+          )}
+          
+          <div className="news-actions">
+            <a 
+              href={article.url} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="read-more-btn"
+            >
+              Read Full Article
+            </a>
+            {article.biasReasoning && (
+              <button 
+                className="bias-info-btn"
+                title={article.biasReasoning}
+              >
+                ℹ️ Bias Info
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
-  ), []);
+  );
 
-  const renderStoryGroupCard = useCallback((storyGroup) => (
+  const renderStoryGroupCard = (storyGroup) => (
     <div key={storyGroup._id} className="story-group-card">
-      <div className="story-header">
-        <h3 
-          className="story-headline"
-          onClick={() => handleStoryClick(storyGroup._id)}
-          role="button"
-          tabIndex={0}
-          onKeyPress={(e) => e.key === 'Enter' && handleStoryClick(storyGroup._id)}
-        >
-          {storyGroup.mainHeadline}
-        </h3>
-        <div className="story-meta">
-          <span className="article-count">
-            {storyGroup.articles.length} articles
-          </span>
-          <span className="story-category">
-            {storyGroup.category}
-          </span>
+      <div className="story-group-header">
+        <h3 className="story-group-title">{storyGroup.mainHeadline}</h3>
+        <p className="story-group-summary">{storyGroup.summary}</p>
+        
+        <div className="story-group-meta">
+          <span className="story-category">{storyGroup.category}</span>
+          <span className="story-date">{formatTimeAgo(storyGroup.createdAt)}</span>
         </div>
       </div>
       
-      <p className="story-summary">{storyGroup.summary}</p>
-      
-      <div className="bias-distribution">
-        {Object.entries(storyGroup.biasDistribution).map(([bias, count]) => (
-          count > 0 && (
-            <div key={bias} className="bias-indicator">
-              <div 
-                className="bias-bar"
-                style={{ 
-                  backgroundColor: getBiasColor(bias),
-                  width: `${(count / storyGroup.articles.length) * 100}%`
-                }}
-              />
-              <span className="bias-count">{count}</span>
+      <div className="story-bias-distribution">
+        <div className="bias-breakdown">
+          <span>Coverage by political leaning:</span>
+          <div className="bias-counts">
+            <div className="bias-count left">
+              <span className="bias-dot" style={{ backgroundColor: getBiasColor('left') }}></span>
+              Left: {storyGroup.biasDistribution.left}
             </div>
-          )
-        ))}
+            <div className="bias-count center">
+              <span className="bias-dot" style={{ backgroundColor: getBiasColor('center') }}></span>
+              Center: {storyGroup.biasDistribution.center}
+            </div>
+            <div className="bias-count right">
+              <span className="bias-dot" style={{ backgroundColor: getBiasColor('right') }}></span>
+              Right: {storyGroup.biasDistribution.right}
+            </div>
+          </div>
+        </div>
       </div>
+      
+      <button 
+        className="compare-coverage-btn"
+        onClick={() => handleStoryClick(storyGroup._id)}
+      >
+        📊 Compare Coverage ({storyGroup.articles.length} sources)
+      </button>
     </div>
-  ), [handleStoryClick, getBiasColor]);
+  );
 
-  const renderSkeleton = () => (
-    <div className="skeleton-container">
-      {Array.from({ length: 5 }, (_, index) => (
+  const renderLoadingSkeleton = () => (
+    <div className="loading-skeleton">
+      {[...Array(5)].map((_, index) => (
         <div key={index} className="skeleton-card">
-          <Skeleton height={40} />
-          <Skeleton count={3} />
-          <div className="skeleton-meta">
-            <Skeleton width={100} />
-            <Skeleton width={80} />
+          <Skeleton height={200} />
+          <div className="skeleton-content">
+            <Skeleton count={3} />
           </div>
         </div>
       ))}
     </div>
   );
 
-  const renderEndMessage = () => (
-    <div className="end-message">
-      <h3>🎉 You've reached the end of the feed!</h3>
-      <p>Check back later for more {view === 'articles' ? 'articles' : 'stories'}.</p>
-      <button 
-        onClick={loadStats} 
-        className="refresh-button"
-        type="button"
-      >
-        Refresh Stats
-      </button>
-    </div>
-  );
-
-  const LoadingSpinner = ({ text }) => (
-    <div className="loading-spinner">
-      <div className="spinner"></div>
-      <span className="loading-text">{text}</span>
-    </div>
-  );
+  if (selectedStory) {
+    return (
+      <CompareCoverage 
+        story={selectedStory} 
+        onClose={() => setSelectedStory(null)} 
+      />
+    );
+  }
 
   return (
-    <div className="news-feed" ref={containerRef}>
+    <div className="news-feed-container">
+      {/* Filter Sidebar */}
       <FilterSidebar
         filters={filters}
         onFiltersChange={handleFiltersChange}
         isOpen={showFilters}
         onToggle={() => setShowFilters(!showFilters)}
-        stats={stats}
       />
 
-      <div className={`news-content ${showFilters ? 'filters-open' : ''}`}>
-        {/* Header Controls */}
-        <div className="news-header">
-          <div className="view-controls">
-            <button
-              onClick={() => handleViewToggle('articles')}
-              className={`view-button ${view === 'articles' ? 'active' : ''}`}
-              type="button"
-            >
-              📰 Articles ({stats.totalArticles})
-            </button>
-            <button
-              onClick={() => handleViewToggle('stories')}
-              className={`view-button ${view === 'stories' ? 'active' : ''}`}
-              type="button"
-            >
-              📚 Stories ({storyGroups.length})
-            </button>
-          </div>
-
-          <div className="feed-actions">
-            <button
+      {/* Main Content */}
+      <div className="news-feed-main">
+        {/* Header */}
+        <div className="news-feed-header">
+          <div className="header-top">
+            <h1>📰 The Narrative</h1>
+            <button 
+              className="filter-toggle-btn"
               onClick={() => setShowFilters(!showFilters)}
-              className="filter-toggle"
-              type="button"
             >
               🔍 Filters
             </button>
           </div>
-        </div>
+          
+          {/* Stats Bar */}
+          <div className="stats-bar">
+            <div className="stat-item">
+              <span className="stat-number">{stats.totalArticles.toLocaleString()}</span>
+              <span className="stat-label">Total Articles</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number">
+                {stats.lastUpdate ? formatTimeAgo(stats.lastUpdate) : 'N/A'}
+              </span>
+              <span className="stat-label">Last Updated</span>
+            </div>
+            <div className="bias-stats">
+              {Object.entries(stats.biasStats).map(([bias, count]) => (
+                <div key={bias} className="bias-stat">
+                  <span 
+                    className="bias-dot"
+                    style={{ backgroundColor: getBiasColor(bias) }}
+                  ></span>
+                  <span>{bias}: {count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="error-message">
-            <p>{error}</p>
-            <button onClick={loadInitialData} type="button">
-              Try Again
+          {/* View Toggle */}
+          <div className="view-toggle">
+            <button 
+              className={`view-btn ${view === 'articles' ? 'active' : ''}`}
+              onClick={() => setView('articles')}
+            >
+              📄 Individual Articles
+            </button>
+            <button 
+              className={`view-btn ${view === 'stories' ? 'active' : ''}`}
+              onClick={() => setView('stories')}
+            >
+              📰 Story Groups
             </button>
           </div>
-        )}
+        </div>
 
         {/* Content */}
-        {loading ? (
-          renderSkeleton()
-        ) : (
-          <InfiniteScroll
-            dataLength={view === 'articles' ? articles.length : storyGroups.length}
-            next={loadMore}
-            hasMore={hasMore && !error}
-            loader={<LoadingSpinner text={`Loading more ${view}...`} />}
-            endMessage={renderEndMessage()}
-            scrollThreshold={0.8}
-            className="infinite-scroll-container"
-          >
-            <div className="feed-grid">
-              {view === 'articles' ? (
-                articles.length > 0 ? (
-                  articles.map(renderArticleCard)
+        <div className="news-content" ref={containerRef}>
+          {loading ? (
+            renderLoadingSkeleton()
+          ) : (
+            <InfiniteScroll
+              dataLength={view === 'articles' ? articles.length : storyGroups.length}
+              next={loadMore}
+              hasMore={hasMore}
+              loader={<div className="loading-more">Loading more...</div>}
+              endMessage={
+                <div className="end-message">
+                  <p>🎉 You've reached the end of the feed!</p>
+                  <p>Check back later for more articles.</p>
+                </div>
+              }
+              refreshFunction={loadInitialData}
+              pullDownToRefresh
+              pullDownToRefreshContent={
+                <h3 style={{ textAlign: 'center' }}>⬇️ Pull down to refresh</h3>
+              }
+              releaseToRefreshContent={
+                <h3 style={{ textAlign: 'center' }}>⬆️ Release to refresh</h3>
+              }
+            >
+              <div className="news-grid">
+                {view === 'articles' ? (
+                  articles.length > 0 ? articles.map(renderArticleCard) : <p>No articles found</p>
                 ) : (
-                  <div className="empty-state">
-                    <h3>No articles found</h3>
-                    <p>Try adjusting your filters or search terms.</p>
-                  </div>
-                )
-              ) : (
-                storyGroups.length > 0 ? (
-                  storyGroups.map(renderStoryGroupCard)
-                ) : (
-                  <div className="empty-state">
-                    <h3>No story groups found</h3>
-                    <p>Stories are automatically grouped from similar articles.</p>
-                  </div>
-                )
-              )}
-            </div>
-          </InfiniteScroll>
-        )}
-      </div>
-
-      {/* Story Detail Modal */}
-      {selectedStory && (
-        <div className="modal-overlay" onClick={() => setSelectedStory(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{selectedStory.mainHeadline}</h2>
-              <button 
-                className="modal-close"
-                onClick={() => setSelectedStory(null)}
-                type="button"
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>{selectedStory.summary}</p>
-              {/* Add more story details here */}
-            </div>
-          </div>
+                  storyGroups.length > 0 ? storyGroups.map(renderStoryGroupCard) : <p>No story groups found</p>
+                )}
+              </div>
+            </InfiniteScroll>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
